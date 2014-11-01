@@ -145,9 +145,30 @@ public class SvnGraph {
 								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
 							}
 
-							final String targetId = graphWriter.node(targetLabel);
+							final String targetId;
 
-							nodeIdsPerLabel.put(targetLabel, targetId);
+							if (nodeIdsPerLabel.containsKey(targetLabel)) {
+								// retrieve the id of the existing node
+								targetId = nodeIdsPerLabel.get(targetLabel);
+							} else {
+								// create the new node
+								if (Utils.isTagPath(update.getPath())) {
+									graphWriter.setNodeStyle(tagStyle);
+								} else {
+									if (!nodeStyles.containsKey(targetRoot)) {
+										final NodeStyle style = new NodeStyle();
+										style.setFillColor(randomColor());
+
+										nodeStyles.put(targetRoot, style);
+									}
+
+									graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
+								}
+
+								targetId = graphWriter.node(targetLabel);
+
+								nodeIdsPerLabel.put(targetLabel, targetId);
+							}
 
 							// create an edge between the 2 nodes
 							graphWriter.edge(sourceId, targetId);
