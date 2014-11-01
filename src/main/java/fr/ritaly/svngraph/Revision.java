@@ -1,6 +1,7 @@
 package fr.ritaly.svngraph;
 
 import static fr.ritaly.svngraph.Utils.getChild;
+import static fr.ritaly.svngraph.Utils.hasChild;
 import static fr.ritaly.svngraph.Utils.validateElement;
 
 import java.text.DateFormat;
@@ -32,9 +33,9 @@ public final class Revision {
 		validateElement(element, "logentry");
 
 		this.number = Long.parseLong(element.getAttribute("revision"));
-		this.author = getChild(element, "author").getTextContent();
+		this.author = hasChild(element, "author") ? getChild(element, "author").getTextContent() : null;
 		this.date = DATE_FORMAT.parse(getChild(element, "date").getTextContent());
-		this.message = getChild(element, "msg").getTextContent();
+		this.message = hasChild(element, "msg") ? getChild(element, "msg").getTextContent() : null;
 
 		// Parse the affected paths
 		final NodeList nodes = getChild(element, "paths").getElementsByTagName("path");

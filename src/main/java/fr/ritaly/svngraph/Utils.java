@@ -17,6 +17,10 @@ public class Utils {
 						element.getNodeName()));
 	}
 
+	public static boolean hasChild(Element root, String childName) {
+		return (root.getElementsByTagName(childName).getLength() > 0);
+	}
+
 	public static Element getChild(Element root, String childName) {
 		final NodeList children = root.getElementsByTagName(childName);
 
