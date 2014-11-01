@@ -27,6 +27,13 @@ import fr.ritaly.graphml4j.NodeStyle;
 
 public class SvnGraph {
 
+	private static String computeNodeLabel(String path, long revision) {
+		final String label = String.format("%s@%d", path, revision);
+
+		// TODO Remove this hard-coded value
+		return label.replace("CALYPSO-GRADLE-PLUGINS_", "");
+	}
+
 	public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
 			System.out.println(String.format("%s <input-file> <output-file>", SvnGraph.class.getSimpleName()));
@@ -65,11 +72,12 @@ public class SvnGraph {
 
 			graphWriter = new GraphMLWriter(fileWriter);
 
+			// TODO Create a parameter for the node width
 			final NodeStyle regularStyle = graphWriter.getNodeStyle();
-			regularStyle.setWidth(300.0f);
+			regularStyle.setWidth(200.0f);
 
 			final NodeStyle tagStyle = graphWriter.getNodeStyle();
-			tagStyle.setWidth(300.0f);
+			tagStyle.setWidth(200.0f);
 			tagStyle.setFillColor(Color.ORANGE.darker());
 
 			graphWriter.graph();
@@ -89,7 +97,7 @@ public class SvnGraph {
 
 							System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));
 
-							final String sourceLabel = Utils.getRootName(source.getPath()) + "@" + source.getRevision();
+							final String sourceLabel = computeNodeLabel(Utils.getRootName(source.getPath()), source.getRevision());
 
 							// create a node for the source (path, revision)
 							final String sourceId;
@@ -111,7 +119,7 @@ public class SvnGraph {
 							}
 
 							// and another for the newly created directory
-							final String targetLabel = Utils.getRootName(update.getPath()) + "@" + revision.getNumber();
+							final String targetLabel = computeNodeLabel(Utils.getRootName(update.getPath()), revision.getNumber());
 
 							if (Utils.isTagPath(update.getPath())) {
 								graphWriter.setNodeStyle(tagStyle);
