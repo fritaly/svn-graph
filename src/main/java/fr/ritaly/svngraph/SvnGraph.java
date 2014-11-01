@@ -99,6 +99,16 @@ public class SvnGraph {
 							System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));
 
 							final String sourceRoot = Utils.getRootName(source.getPath());
+
+							if (sourceRoot == null) {
+								// skip the revisions whose associated root is
+								// null (happens whether a branch was created
+								// outside the 'branches' directory for
+								// instance)
+								System.err.println(String.format("Skipped revision %d because of a null root", source.getRevision()));
+								continue;
+							}
+
 							final String sourceLabel = computeNodeLabel(sourceRoot, source.getRevision());
 
 							// create a node for the source (path, revision)
@@ -129,6 +139,11 @@ public class SvnGraph {
 
 							// and another for the newly created directory
 							final String targetRoot = Utils.getRootName(update.getPath());
+
+							if (targetRoot == null) {
+								System.err.println(String.format("Skipped revision %d because of a null root", revision.getNumber()));
+								continue;
+							}
 
 							final String targetLabel = computeNodeLabel(targetRoot, revision.getNumber());
 
