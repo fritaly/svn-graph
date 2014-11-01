@@ -43,6 +43,8 @@ public class Utils {
 	// no trailing slash expected when pointing directly to a directory
 	private static final Pattern TAG_PATTERN = Pattern.compile(".*/tags/([^/]+)");
 
+	private static final Pattern MODULE_PATTERN = Pattern.compile(".*/([^/]+)/(trunk|branches|tags)/.*");
+
 	public static boolean isBranchPath(String path) {
 		return (getBranchName(path) != null);
 	}
@@ -59,6 +61,12 @@ public class Utils {
 
 	public static String getTagName(String path) {
 		final Matcher matcher = TAG_PATTERN.matcher(path);
+
+		return matcher.matches() ? matcher.group(1) : null;
+	}
+
+	public static String getModule(String path) {
+		final Matcher matcher = MODULE_PATTERN.matcher(path);
 
 		return matcher.matches() ? matcher.group(1) : null;
 	}
