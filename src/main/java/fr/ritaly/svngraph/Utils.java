@@ -69,6 +69,17 @@ public class Utils {
 		if (isTagPath(path)) {
 			return getTagName(path);
 		}
+		if (path.contains("/trunk/")) {
+			return "trunk";
+		}
+
+		final Pattern pattern = Pattern.compile(".*/(branches|tags)/([^/]+)(/.*)?");
+
+		final Matcher matcher = pattern.matcher(path);
+
+		if (matcher.matches()) {
+			return matcher.group(2);
+		}
 
 		return null;
 	}
