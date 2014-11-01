@@ -8,12 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -68,6 +70,7 @@ public class SvnGraph {
 			graphWriter.setNodeStyle(nodeStyle);
 			graphWriter.graph();
 
+			// Map associating node labels to their corresponding node id in the graph
 			final Map<String, String> nodeIdsPerLabel = new TreeMap<>();
 
 			for (Revision revision : revisions) {
@@ -98,11 +101,11 @@ public class SvnGraph {
 							}
 
 							// and another for the newly created directory
-							final String targetLabel = Utils.getRootName(update.getPath());
+							final String targetLabel = Utils.getRootName(update.getPath()) + "@" + revision.getNumber();
 
 							final String targetId = graphWriter.node(targetLabel);
 
-							nodeIdsPerLabel.put(targetId, targetLabel);
+							nodeIdsPerLabel.put(targetLabel, targetId);
 
 							// create an edge between the 2 nodes
 							graphWriter.edge(sourceId, targetId);
@@ -114,6 +117,36 @@ public class SvnGraph {
 					System.out.println();
 
 					count++;
+				}
+			}
+
+			// Dispatch the revisions per corresponding branch
+			final Map<String, Set<Long>> revisionsPerBranch = new TreeMap<>();
+
+			for (String nodeLabel : nodeIdsPerLabel.keySet()) {
+				if (nodeLabel.contains("@")) {
+					final String branchName = StringUtils.substringBefore(nodeLabel, "@");
+					final long revision = Long.parseLong(StringUtils.substringAfter(nodeLabel, "@"));
+
+					if (!revisionsPerBranch.containsKey(branchName)) {
+						revisionsPerBranch.put(branchName, new TreeSet<Long>());
+					}
+
+					revisionsPerBranch.get(branchName).add(revision);
+				} else {
+					throw new IllegalStateException(nodeLabel);
+				}
+			}
+
+			// Recreate the missing edges between revisions from a same branch
+			for (String branchName : revisionsPerBranch.keySet()) {
+				final List<Long> branchRevisions = new ArrayList<>(revisionsPerBranch.get(branchName));
+
+				for (int i = 0; i < branchRevisions.size() - 1; i++) {
+					final String nodeLabel1 = String.format("%s@%d", branchName, branchRevisions.get(i));
+					final String nodeLabel2 = String.format("%s@%d", branchName, branchRevisions.get(i+1));
+
+					graphWriter.edge(nodeIdsPerLabel.get(nodeLabel1), nodeIdsPerLabel.get(nodeLabel2));
 				}
 			}
 
