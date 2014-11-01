@@ -76,7 +76,7 @@ public class SvnGraph {
 			graphWriter = new GraphMLWriter(fileWriter);
 
 			final NodeStyle tagStyle = graphWriter.getNodeStyle();
-			tagStyle.setFillColor(Color.ORANGE.darker());
+			tagStyle.setFillColor(Color.WHITE);
 
 			graphWriter.graph();
 
