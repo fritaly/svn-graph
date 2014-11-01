@@ -51,6 +51,8 @@ public final class Update {
 
 	private long copyFromRev = -1;
 
+	private boolean merge;
+
 	public Update(Element element) throws ParseException {
 		validateElement(element, "path");
 
@@ -64,6 +66,13 @@ public final class Update {
 		if (element.hasAttribute("copyfrom-rev")) {
 			this.copyFromRev = Long.parseLong(element.getAttribute("copyfrom-rev"));
 		}
+		if (element.hasAttribute("text-mods")) {
+			this.merge = Boolean.parseBoolean(element.getAttribute("text-mods"));
+		}
+	}
+
+	public boolean isMerge() {
+		return merge;
 	}
 
 	public boolean isCopy() {
@@ -93,6 +102,12 @@ public final class Update {
 	public boolean isSignificant() {
 		// a significant update is one affecting a key directory (a branch, a
 		// tag, the trunk) with a valid action (not MODIFY or DELETE)
+		if (getKind() == Kind.FILE) {
+			if (isMerge()) {
+				return true;
+			}
+		}
+
 		if (getKind() != Kind.DIR) {
 			return false;
 		}
