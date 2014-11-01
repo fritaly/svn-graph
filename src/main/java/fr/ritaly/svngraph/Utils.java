@@ -58,4 +58,18 @@ public class Utils {
 
 		return matcher.matches() ? matcher.group(1) : null;
 	}
+
+	public static String getRootName(String path) {
+		if (isTrunkPath(path)) {
+			return "trunk";
+		}
+		if (isBranchPath(path)) {
+			return getBranchName(path);
+		}
+		if (isTagPath(path)) {
+			return getTagName(path);
+		}
+
+		return null;
+	}
 }
