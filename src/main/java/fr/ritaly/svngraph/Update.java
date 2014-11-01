@@ -92,11 +92,11 @@ public final class Update {
 
 	public boolean isSignificant() {
 		// a significant update is one affecting a key directory (a branch, a
-		// tag, the trunk) with a valid action (not MODIFY)
+		// tag, the trunk) with a valid action (not MODIFY or DELETE)
 		if (getKind() != Kind.DIR) {
 			return false;
 		}
-		if (getAction() == Action.MODIFY) {
+		if ((getAction() == Action.MODIFY) || (getAction() == Action.DELETE)) {
 			return false;
 		}
 

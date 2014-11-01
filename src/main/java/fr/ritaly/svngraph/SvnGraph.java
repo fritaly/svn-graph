@@ -1,15 +1,15 @@
 package fr.ritaly.svngraph;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
@@ -18,27 +18,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import fr.ritaly.graphml4j.EdgeStyle;
+import fr.ritaly.graphml4j.GraphMLWriter;
+import fr.ritaly.graphml4j.NodeStyle;
+
 public class SvnGraph {
-
-	private static boolean isBranchPath(String string) {
-		return string.matches(".+/branches/[^/]+$");
-	}
-
-	private static boolean isTagPath(String string) {
-		return string.matches(".+/tags/[^/]+$");
-	}
-
-	private static boolean isTrunkPath(String string) {
-		return string.matches(".+/trunk$");
-	}
-
-	private static boolean isInternalPath(String string) {
-		return string.matches(".+/trunk/.+$") || string.matches(".+/(tags|branches)/[^/]+/.+$");
-	}
-
-	private static boolean isImportantPath(String string) {
-		return isBranchPath(string) || isTagPath(string) || isTrunkPath(string);
-	}
 
 	public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
@@ -53,7 +37,6 @@ public class SvnGraph {
 		}
 
 		final File output = new File(args[1]);
-
 
 		final Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(input);
 
@@ -71,82 +54,81 @@ public class SvnGraph {
 
 		int count = 0;
 
-		for (Revision revision : revisions) {
-			if (revision.isSignificant()) {
-				System.out.println(revision.getNumber() + " - " + revision.getMessage());
+		FileWriter fileWriter = null;
+		GraphMLWriter graphWriter = null;
 
-				for (Update update : revision.getSignificantUpdates()) {
-					if (update.isCopy()) {
-						final RevisionPath source = update.getCopySource();
+		try {
+			fileWriter = new FileWriter(output);
 
-						System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));
-					} else {
-						System.out.println(String.format("  > %s %s", update.getAction(), update.getPath()));
+			graphWriter = new GraphMLWriter(fileWriter);
+
+			final NodeStyle nodeStyle = graphWriter.getNodeStyle();
+			nodeStyle.setWidth(250.0f);
+
+			graphWriter.setNodeStyle(nodeStyle);
+			graphWriter.graph();
+
+			final Map<String, String> nodeIdsPerLabel = new TreeMap<>();
+
+			for (Revision revision : revisions) {
+				if (revision.isSignificant()) {
+					System.out.println(revision.getNumber() + " - " + revision.getMessage());
+
+					// TODO Render also the deletion of branches
+					// there should be only 1 significant update per revision (the one with action ADD)
+					for (Update update : revision.getSignificantUpdates()) {
+						if (update.isCopy()) {
+							final RevisionPath source = update.getCopySource();
+
+							System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));
+
+							final String sourceLabel = Utils.getRootName(source.getPath()) + "@" + source.getRevision();
+
+							// create a node for the source (path, revision)
+							final String sourceId;
+
+							if (nodeIdsPerLabel.containsKey(sourceLabel)) {
+								// retrieve the id of the existing node
+								sourceId = nodeIdsPerLabel.get(sourceLabel);
+							} else {
+								// create the new node
+								sourceId = graphWriter.node(sourceLabel);
+
+								nodeIdsPerLabel.put(sourceLabel, sourceId);
+							}
+
+							// and another for the newly created directory
+							final String targetLabel = Utils.getRootName(update.getPath());
+
+							final String targetId = graphWriter.node(targetLabel);
+
+							nodeIdsPerLabel.put(targetId, targetLabel);
+
+							// create an edge between the 2 nodes
+							graphWriter.edge(sourceId, targetId);
+						} else {
+							System.out.println(String.format("  > %s %s", update.getAction(), update.getPath()));
+						}
 					}
+
+					System.out.println();
+
+					count++;
 				}
+			}
 
-				System.out.println();
+			graphWriter.closeGraph();
 
-				count++;
+			System.out.println(String.format("Found %d significant revisions", count));
+		} finally {
+			if (graphWriter != null) {
+				graphWriter.close();
+			}
+			if (fileWriter != null) {
+				fileWriter.close();
 			}
 		}
 
-		System.out.println(String.format("Found %d significant revisions", count));
-
 		System.out.println("Done");
-
-//		// Remove all elements <path> pertaining to file entries
-//		NodeList nodes = (NodeList) xpath.evaluate("/log/logentry/paths/path[@kind = 'file']", document.getDocumentElement(),
-//				XPathConstants.NODESET);
-//
-//		for (int i = 0; i < nodes.getLength(); i++) {
-//			final Element node = (Element) nodes.item(i);
-//
-//			node.getParentNode().removeChild(node);
-//		}
-//
-//		// Remove all elements <path> pertaining to directory updates
-//		nodes = (NodeList) xpath.evaluate("/log/logentry/paths/path[@kind = 'dir' and @action='M']",
-//				document.getDocumentElement(), XPathConstants.NODESET);
-//
-//		for (int i = 0; i < nodes.getLength(); i++) {
-//			final Element node = (Element) nodes.item(i);
-//
-//			node.getParentNode().removeChild(node);
-//		}
-//
-//		// Remove all path entries pointing to internal directories
-//		nodes = (NodeList) xpath.evaluate("/log/logentry/paths/path[@kind = 'dir']", document.getDocumentElement(),
-//				XPathConstants.NODESET);
-//
-//		for (int i = 0; i < nodes.getLength(); i++) {
-//			final Element node = (Element) nodes.item(i);
-//
-//			final String path = node.getTextContent();
-//
-//			if (isInternalPath(path)) {
-//				node.getParentNode().removeChild(node);
-//			} else {
-//				System.out.println(path);
-//			}
-//		}
-//
-//		// Remove all <logentry> elements whose <paths> child element has no
-//		// child
-//		nodes = (NodeList) xpath.evaluate("/log/logentry/paths[not(child::*)]/..", document.getDocumentElement(),
-//				XPathConstants.NODESET);
-//
-//		for (int i = 0; i < nodes.getLength(); i++) {
-//			final Element node = (Element) nodes.item(i);
-//
-//			node.getParentNode().removeChild(node);
-//		}
-//
-//		final DOMSource domSource = new DOMSource(document.getDocumentElement());
-//		final StreamResult outputResult = new StreamResult(output);
-//
-//		TransformerFactory.newInstance().newTransformer().transform(domSource, outputResult);
-//
-//		System.out.println("Done");
 	}
 }
