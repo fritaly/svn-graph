@@ -1,5 +1,6 @@
 package fr.ritaly.svngraph;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -64,10 +65,13 @@ public class SvnGraph {
 
 			graphWriter = new GraphMLWriter(fileWriter);
 
-			final NodeStyle nodeStyle = graphWriter.getNodeStyle();
-			nodeStyle.setWidth(250.0f);
+			final NodeStyle regularStyle = graphWriter.getNodeStyle();
+			regularStyle.setWidth(300.0f);
 
-			graphWriter.setNodeStyle(nodeStyle);
+			final NodeStyle tagStyle = graphWriter.getNodeStyle();
+			tagStyle.setWidth(300.0f);
+			tagStyle.setFillColor(Color.ORANGE.darker());
+
 			graphWriter.graph();
 
 			// Map associating node labels to their corresponding node id in the graph
@@ -95,6 +99,12 @@ public class SvnGraph {
 								sourceId = nodeIdsPerLabel.get(sourceLabel);
 							} else {
 								// create the new node
+								if (Utils.isTagPath(source.getPath())) {
+									graphWriter.setNodeStyle(tagStyle);
+								} else {
+									graphWriter.setNodeStyle(regularStyle);
+								}
+
 								sourceId = graphWriter.node(sourceLabel);
 
 								nodeIdsPerLabel.put(sourceLabel, sourceId);
@@ -102,6 +112,12 @@ public class SvnGraph {
 
 							// and another for the newly created directory
 							final String targetLabel = Utils.getRootName(update.getPath()) + "@" + revision.getNumber();
+
+							if (Utils.isTagPath(update.getPath())) {
+								graphWriter.setNodeStyle(tagStyle);
+							} else {
+								graphWriter.setNodeStyle(regularStyle);
+							}
 
 							final String targetId = graphWriter.node(targetLabel);
 
