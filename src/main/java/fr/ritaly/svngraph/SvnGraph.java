@@ -2,7 +2,6 @@ package fr.ritaly.svngraph;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,15 +16,19 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import fr.ritaly.graphml4j.EdgeStyle;
 import fr.ritaly.graphml4j.GraphMLWriter;
 import fr.ritaly.graphml4j.NodeStyle;
 
 public class SvnGraph {
+
+	private static Color randomColor() {
+		return new Color(RandomUtils.nextInt(255), RandomUtils.nextInt(255), RandomUtils.nextInt(255));
+	}
 
 	private static String computeNodeLabel(String path, long revision) {
 		final String label = String.format("%s@%d", path, revision);
@@ -72,18 +75,16 @@ public class SvnGraph {
 
 			graphWriter = new GraphMLWriter(fileWriter);
 
-			// TODO Create a parameter for the node width
-			final NodeStyle regularStyle = graphWriter.getNodeStyle();
-			regularStyle.setWidth(200.0f);
-
 			final NodeStyle tagStyle = graphWriter.getNodeStyle();
-			tagStyle.setWidth(200.0f);
 			tagStyle.setFillColor(Color.ORANGE.darker());
 
 			graphWriter.graph();
 
-			// Map associating node labels to their corresponding node id in the graph
+			// map associating node labels to their corresponding node id in the graph
 			final Map<String, String> nodeIdsPerLabel = new TreeMap<>();
+
+			// the node style associated to each branch
+			final Map<String, NodeStyle> nodeStyles = new TreeMap<>();
 
 			for (Revision revision : revisions) {
 				if (revision.isSignificant()) {
@@ -97,7 +98,8 @@ public class SvnGraph {
 
 							System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));
 
-							final String sourceLabel = computeNodeLabel(Utils.getRootName(source.getPath()), source.getRevision());
+							final String sourceRoot = Utils.getRootName(source.getPath());
+							final String sourceLabel = computeNodeLabel(sourceRoot, source.getRevision());
 
 							// create a node for the source (path, revision)
 							final String sourceId;
@@ -110,7 +112,14 @@ public class SvnGraph {
 								if (Utils.isTagPath(source.getPath())) {
 									graphWriter.setNodeStyle(tagStyle);
 								} else {
-									graphWriter.setNodeStyle(regularStyle);
+									if (!nodeStyles.containsKey(sourceRoot)) {
+										final NodeStyle style = new NodeStyle();
+										style.setFillColor(randomColor());
+
+										nodeStyles.put(sourceRoot, style);
+									}
+
+									graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
 								}
 
 								sourceId = graphWriter.node(sourceLabel);
@@ -119,12 +128,21 @@ public class SvnGraph {
 							}
 
 							// and another for the newly created directory
-							final String targetLabel = computeNodeLabel(Utils.getRootName(update.getPath()), revision.getNumber());
+							final String targetRoot = Utils.getRootName(update.getPath());
+
+							final String targetLabel = computeNodeLabel(targetRoot, revision.getNumber());
 
 							if (Utils.isTagPath(update.getPath())) {
 								graphWriter.setNodeStyle(tagStyle);
 							} else {
-								graphWriter.setNodeStyle(regularStyle);
+								if (!nodeStyles.containsKey(targetRoot)) {
+									final NodeStyle style = new NodeStyle();
+									style.setFillColor(randomColor());
+
+									nodeStyles.put(targetRoot, style);
+								}
+
+								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
 							}
 
 							final String targetId = graphWriter.node(targetLabel);
