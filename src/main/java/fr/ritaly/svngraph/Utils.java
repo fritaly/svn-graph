@@ -19,6 +19,7 @@ package fr.ritaly.svngraph;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -71,12 +72,36 @@ public class Utils {
 		return matcher.matches() ? matcher.group(1) : null;
 	}
 
+	public static String getBranchPath(String path) {
+		final Pattern pattern = Pattern.compile("(.*/branches/([^/]+))(/.*)?");
+
+		final Matcher matcher = pattern.matcher(path);
+
+		return matcher.matches() ? matcher.group(1) : null;
+	}
+
 	public static boolean isTagPath(String path) {
 		return (getTagName(path) != null);
 	}
 
 	public static String getTagName(String path) {
 		final Matcher matcher = TAG_PATTERN.matcher(path);
+
+		return matcher.matches() ? matcher.group(1) : null;
+	}
+
+	public static String getTagPath(String path) {
+		final Pattern pattern = Pattern.compile("(.*/tags/([^/]+))(/.*)?");
+
+		final Matcher matcher = pattern.matcher(path);
+
+		return matcher.matches() ? matcher.group(1) : null;
+	}
+
+	public static String getTrunkPath(String path) {
+		final Pattern pattern = Pattern.compile("(.*/trunk)(/.*)?");
+
+		final Matcher matcher = pattern.matcher(path);
 
 		return matcher.matches() ? matcher.group(1) : null;
 	}
@@ -110,5 +135,23 @@ public class Utils {
 		}
 
 		return null;
+	}
+
+	public static String getRootPath(String path) {
+		String result = getTrunkPath(path);
+
+		if (result != null) {
+			return result;
+		}
+
+		result = getBranchPath(path);
+
+		if (result != null) {
+			return result;
+		}
+
+		result = getTagPath(path);
+
+		return result;
 	}
 }
