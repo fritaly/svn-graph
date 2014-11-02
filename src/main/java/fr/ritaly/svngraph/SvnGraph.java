@@ -28,15 +28,10 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import fr.ritaly.graphml4j.GraphMLWriter;
 import fr.ritaly.graphml4j.NodeStyle;
@@ -70,17 +65,7 @@ public class SvnGraph {
 
 		final Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(input);
 
-		final XPath xpath = XPathFactory.newInstance().newXPath();
-
-		NodeList nodes = (NodeList) xpath.evaluate("/log/logentry", document.getDocumentElement(), XPathConstants.NODESET);
-
-		final List<Revision> revisions = new ArrayList<>();
-
-		for (int i = 0; i < nodes.getLength(); i++) {
-			revisions.add(new Revision((Element) nodes.item(i)));
-		}
-
-		System.out.println(String.format("Parsed %d revisions", revisions.size()));
+		final History history = new History(document);
 
 		int count = 0;
 
@@ -103,67 +88,86 @@ public class SvnGraph {
 			// the node style associated to each branch
 			final Map<String, NodeStyle> nodeStyles = new TreeMap<>();
 
-			for (Revision revision : revisions) {
-				if (revision.isSignificant()) {
-					System.out.println(revision.getNumber() + " - " + revision.getMessage());
+			for (Revision revision : history.getSignificantRevisions()) {
+				System.out.println(revision.getNumber() + " - " + revision.getMessage());
 
-					// TODO Render also the deletion of branches
-					// there should be only 1 significant update per revision (the one with action ADD)
-					for (Update update : revision.getSignificantUpdates()) {
-						if (update.isCopy()) {
-							final RevisionPath source = update.getCopySource();
+				// TODO Render also the deletion of branches
+				// there should be only 1 significant update per revision (the one with action ADD)
+				for (Update update : revision.getSignificantUpdates()) {
+					if (update.isCopy()) {
+						final RevisionPath source = update.getCopySource();
 
-							System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));
+						System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));
 
-							final String sourceRoot = Utils.getRootName(source.getPath());
+						final String sourceRoot = Utils.getRootName(source.getPath());
 
-							if (sourceRoot == null) {
-								// skip the revisions whose associated root is
-								// null (happens whether a branch was created
-								// outside the 'branches' directory for
-								// instance)
-								System.err.println(String.format("Skipped revision %d because of a null root", source.getRevision()));
-								continue;
-							}
+						if (sourceRoot == null) {
+							// skip the revisions whose associated root is
+							// null (happens whether a branch was created
+							// outside the 'branches' directory for
+							// instance)
+							System.err.println(String.format("Skipped revision %d because of a null root", source.getRevision()));
+							continue;
+						}
 
-							final String sourceLabel = computeNodeLabel(sourceRoot, source.getRevision());
+						final String sourceLabel = computeNodeLabel(sourceRoot, source.getRevision());
 
-							// create a node for the source (path, revision)
-							final String sourceId;
+						// create a node for the source (path, revision)
+						final String sourceId;
 
-							if (nodeIdsPerLabel.containsKey(sourceLabel)) {
-								// retrieve the id of the existing node
-								sourceId = nodeIdsPerLabel.get(sourceLabel);
+						if (nodeIdsPerLabel.containsKey(sourceLabel)) {
+							// retrieve the id of the existing node
+							sourceId = nodeIdsPerLabel.get(sourceLabel);
+						} else {
+							// create the new node
+							if (Utils.isTagPath(source.getPath())) {
+								graphWriter.setNodeStyle(tagStyle);
 							} else {
-								// create the new node
-								if (Utils.isTagPath(source.getPath())) {
-									graphWriter.setNodeStyle(tagStyle);
-								} else {
-									if (!nodeStyles.containsKey(sourceRoot)) {
-										final NodeStyle style = new NodeStyle();
-										style.setFillColor(randomColor());
+								if (!nodeStyles.containsKey(sourceRoot)) {
+									final NodeStyle style = new NodeStyle();
+									style.setFillColor(randomColor());
 
-										nodeStyles.put(sourceRoot, style);
-									}
-
-									graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
+									nodeStyles.put(sourceRoot, style);
 								}
 
-								sourceId = graphWriter.node(sourceLabel);
-
-								nodeIdsPerLabel.put(sourceLabel, sourceId);
+								graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
 							}
 
-							// and another for the newly created directory
-							final String targetRoot = Utils.getRootName(update.getPath());
+							sourceId = graphWriter.node(sourceLabel);
 
-							if (targetRoot == null) {
-								System.err.println(String.format("Skipped revision %d because of a null root", revision.getNumber()));
-								continue;
+							nodeIdsPerLabel.put(sourceLabel, sourceId);
+						}
+
+						// and another for the newly created directory
+						final String targetRoot = Utils.getRootName(update.getPath());
+
+						if (targetRoot == null) {
+							System.err.println(String.format("Skipped revision %d because of a null root", revision.getNumber()));
+							continue;
+						}
+
+						final String targetLabel = computeNodeLabel(targetRoot, revision.getNumber());
+
+						if (Utils.isTagPath(update.getPath())) {
+							graphWriter.setNodeStyle(tagStyle);
+						} else {
+							if (!nodeStyles.containsKey(targetRoot)) {
+								final NodeStyle style = new NodeStyle();
+								style.setFillColor(randomColor());
+
+								nodeStyles.put(targetRoot, style);
 							}
 
-							final String targetLabel = computeNodeLabel(targetRoot, revision.getNumber());
+							graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
+						}
 
+						final String targetId;
+
+						if (nodeIdsPerLabel.containsKey(targetLabel)) {
+							// retrieve the id of the existing node
+							targetId = nodeIdsPerLabel.get(targetLabel);
+						} else {
+							// create the new node
 							if (Utils.isTagPath(update.getPath())) {
 								graphWriter.setNodeStyle(tagStyle);
 							} else {
@@ -177,42 +181,21 @@ public class SvnGraph {
 								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
 							}
 
-							final String targetId;
+							targetId = graphWriter.node(targetLabel);
 
-							if (nodeIdsPerLabel.containsKey(targetLabel)) {
-								// retrieve the id of the existing node
-								targetId = nodeIdsPerLabel.get(targetLabel);
-							} else {
-								// create the new node
-								if (Utils.isTagPath(update.getPath())) {
-									graphWriter.setNodeStyle(tagStyle);
-								} else {
-									if (!nodeStyles.containsKey(targetRoot)) {
-										final NodeStyle style = new NodeStyle();
-										style.setFillColor(randomColor());
-
-										nodeStyles.put(targetRoot, style);
-									}
-
-									graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
-								}
-
-								targetId = graphWriter.node(targetLabel);
-
-								nodeIdsPerLabel.put(targetLabel, targetId);
-							}
-
-							// create an edge between the 2 nodes
-							graphWriter.edge(sourceId, targetId);
-						} else {
-							System.out.println(String.format("  > %s %s", update.getAction(), update.getPath()));
+							nodeIdsPerLabel.put(targetLabel, targetId);
 						}
+
+						// create an edge between the 2 nodes
+						graphWriter.edge(sourceId, targetId);
+					} else {
+						System.out.println(String.format("  > %s %s", update.getAction(), update.getPath()));
 					}
-
-					System.out.println();
-
-					count++;
 				}
+
+				System.out.println();
+
+				count++;
 			}
 
 			// Dispatch the revisions per corresponding branch
