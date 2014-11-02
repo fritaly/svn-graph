@@ -21,6 +21,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +68,16 @@ public class SvnGraph {
 
 		final History history = new History(document);
 
+		final Set<String> rootPaths = history.getRootPaths();
+
+		System.out.println(rootPaths);
+
+		for (String path : rootPaths) {
+			System.out.println(path);
+			System.out.println(history.getRevisionsForPath(path));
+			System.out.println();
+		}
+
 		int count = 0;
 
 		FileWriter fileWriter = null;
@@ -95,6 +106,7 @@ public class SvnGraph {
 				// there should be only 1 significant update per revision (the one with action ADD)
 				for (Update update : revision.getSignificantUpdates()) {
 					if (update.isCopy()) {
+						// a merge is also considered a copy
 						final RevisionPath source = update.getCopySource();
 
 						System.out.println(String.format("  > %s %s from %s@%d", update.getAction(), update.getPath(), source.getPath(), source.getRevision()));

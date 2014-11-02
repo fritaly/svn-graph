@@ -28,6 +28,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang.Validate;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -93,6 +96,19 @@ public final class Revision {
 		return message;
 	}
 
+	// tells whether the given path is updated by this revision
+	public boolean isOnPath(String path) {
+		Validate.notNull(path, "The given path is null");
+
+		for (Update update : updates) {
+			if (update.isOnPath(path)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public boolean isSignificant() {
 		// a revision is significant if one of its attached updates is significant
 		for (Update update : updates) {
@@ -102,5 +118,10 @@ public final class Revision {
 		}
 
 		return false;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("number", number).toString();
 	}
 }

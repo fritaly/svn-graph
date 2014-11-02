@@ -18,8 +18,10 @@ package fr.ritaly.svngraph;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -33,7 +35,7 @@ import org.w3c.dom.NodeList;
 
 public final class History {
 
-	private final List<Revision> revisions = new ArrayList<>();
+	private final TreeMap<Long, Revision> revisions = new TreeMap<>();
 
 	public History(Document document) throws XPathExpressionException, ParseException {
 		Validate.notNull(document, "The given document is null");
@@ -43,7 +45,9 @@ public final class History {
 		NodeList nodes = (NodeList) xpath.evaluate("/log/logentry", document.getDocumentElement(), XPathConstants.NODESET);
 
 		for (int i = 0; i < nodes.getLength(); i++) {
-			revisions.add(new Revision((Element) nodes.item(i)));
+			final Revision revision = new Revision((Element) nodes.item(i));
+
+			revisions.put(revision.getNumber(), revision);
 		}
 
 		System.out.println(String.format("Parsed %d revisions", revisions.size()));
@@ -54,23 +58,47 @@ public final class History {
 	}
 
 	public List<Revision> getRevisions() {
-		return Collections.unmodifiableList(revisions);
+		return new ArrayList<>(revisions.values());
 	}
 
-	public Revision getRevision(long revision) {
-		for (Revision aRevision : revisions) {
-			if (aRevision.getNumber() == revision) {
-				return aRevision;
+	public List<Revision> getRevisionsForPath(String path) {
+		Validate.notNull(path, "The given path is null");
+
+		final List<Revision> list = new ArrayList<>();
+
+		for (Revision revision : revisions.values()) {
+			if (revision.isOnPath(path)) {
+				list.add(revision);
 			}
 		}
 
-		return null;
+		return list;
+	}
+
+	public Set<String> getRootPaths() {
+		final Set<String> set = new TreeSet<>();
+
+		for (Revision revision : revisions.values()) {
+			for (Update update : revision.getUpdates()) {
+				final String path = Utils.getRootPath(update.getPath());
+
+				if (path != null) {
+					set.add(path);
+				}
+			}
+		}
+
+		return set;
+	}
+
+	public Revision getRevision(long revision) {
+		return revisions.get(new Long(revision));
 	}
 
 	public List<Revision> getSignificantRevisions() {
 		final List<Revision> list = new ArrayList<>();
 
-		for (Revision revision : revisions) {
+		for (Revision revision : revisions.values()) {
 			if (revision.isSignificant()) {
 				list.add(revision);
 			}

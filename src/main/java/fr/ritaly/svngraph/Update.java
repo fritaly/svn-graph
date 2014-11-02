@@ -21,6 +21,7 @@ import static fr.ritaly.svngraph.Utils.*;
 
 import java.text.ParseException;
 
+import org.apache.commons.lang.Validate;
 import org.w3c.dom.Element;
 
 public final class Update {
@@ -113,6 +114,13 @@ public final class Update {
 
 	public Action getAction() {
 		return action;
+	}
+
+	// tells whether the given path is updated by this instance
+	public boolean isOnPath(String path) {
+		Validate.notNull(path, "The given path is null");
+
+		return this.path.startsWith(path);
 	}
 
 	public boolean isSignificant() {
