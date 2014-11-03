@@ -44,10 +44,7 @@ public class SvnGraph {
 	}
 
 	private static String computeNodeLabel(String path, long revision) {
-		final String label = String.format("%s@%d", path, revision);
-
-		// TODO Remove this hard-coded value
-		return label.replace("CALYPSO-GRADLE-PLUGINS_", "");
+		return String.format("%s@%d", path, revision);
 	}
 
 	public static void main(String[] args) throws Exception {
