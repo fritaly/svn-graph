@@ -19,6 +19,7 @@ package fr.ritaly.svngraph;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -33,9 +34,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+// TODO add javadoc
+// TODO add unit tests based on svn log of a public open source project
 public final class History {
 
-	private final TreeMap<Long, Revision> revisions = new TreeMap<>();
+	private final Map<Long, Revision> revisions = new TreeMap<>();
 
 	public History(Document document) throws XPathExpressionException, ParseException {
 		Validate.notNull(document, "The given document is null");
