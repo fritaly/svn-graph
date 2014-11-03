@@ -18,6 +18,7 @@ package fr.ritaly.svngraph;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +40,14 @@ import org.w3c.dom.NodeList;
 public final class History {
 
 	private final Map<Long, Revision> revisions = new TreeMap<>();
+
+	private History(Collection<Revision> collection) {
+		Validate.notNull(collection, "The given collection of revisions is null");
+
+		for (Revision revision : collection) {
+			this.revisions.put(revision.getNumber(), revision);
+		}
+	}
 
 	public History(Document document) throws XPathExpressionException, ParseException {
 		Validate.notNull(document, "The given document is null");
@@ -64,7 +73,7 @@ public final class History {
 		return new ArrayList<>(revisions.values());
 	}
 
-	public List<Revision> getRevisionsForPath(String path) {
+	public History getHistory(String path) {
 		Validate.notNull(path, "The given path is null");
 
 		final List<Revision> list = new ArrayList<>();
@@ -75,7 +84,7 @@ public final class History {
 			}
 		}
 
-		return list;
+		return new History(list);
 	}
 
 	public Set<String> getRootPaths() {
@@ -115,6 +124,4 @@ public final class History {
 
 		return list;
 	}
-
-
 }
