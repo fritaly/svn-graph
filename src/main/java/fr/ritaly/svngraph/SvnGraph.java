@@ -71,7 +71,7 @@ public class SvnGraph {
 
 		for (String path : rootPaths) {
 			System.out.println(path);
-			System.out.println(history.getRevisionsForPath(path));
+			System.out.println(history.getHistory(path).getRevisions());
 			System.out.println();
 		}
 
