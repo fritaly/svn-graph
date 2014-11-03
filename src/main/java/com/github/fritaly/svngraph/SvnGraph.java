@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package fr.ritaly.svngraph;
+package com.github.fritaly.svngraph;
 
 import java.awt.Color;
 import java.io.File;
