@@ -94,6 +94,12 @@ public final class History {
 		return set;
 	}
 
+	public boolean isRootPath(String path) {
+		Validate.notNull(path, "The given path is null");
+
+		return getRootPaths().contains(path);
+	}
+
 	public Revision getRevision(long revision) {
 		return revisions.get(new Long(revision));
 	}
@@ -109,4 +115,6 @@ public final class History {
 
 		return list;
 	}
+
+
 }
