@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package fr.ritaly.svngraph;
+package com.github.fritaly.svngraph;
 
-import static fr.ritaly.svngraph.Utils.getChild;
-import static fr.ritaly.svngraph.Utils.hasChild;
-import static fr.ritaly.svngraph.Utils.validateElement;
+import static com.github.fritaly.svngraph.Utils.getChild;
+import static com.github.fritaly.svngraph.Utils.hasChild;
+import static com.github.fritaly.svngraph.Utils.validateElement;
 
 import java.text.DateFormat;
 import java.text.ParseException;
