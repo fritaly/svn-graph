@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'idea'
 
 sourceCompatibility = targetCompatibility = '1.7'
 
@@ -10,7 +11,7 @@ repositories {
 
 dependencies {
   compile 'commons-lang:commons-lang:2.6'
-  compile 'fr.ritaly.graphml4j:graphml4j:1.0-20141101'
+  compile 'com.github.fritaly.graphml4j:graphml4j:1.0-20141101'
 }
 
 task wrapper(type: Wrapper) {
