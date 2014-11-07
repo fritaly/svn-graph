@@ -30,12 +30,12 @@ import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import com.github.fritaly.graphml4j.GraphMLWriter;
+import com.github.fritaly.graphml4j.NodeStyle;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
 
-import fr.ritaly.graphml4j.GraphMLWriter;
-import fr.ritaly.graphml4j.NodeStyle;
 
 public class SvnGraph {
 
