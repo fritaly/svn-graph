@@ -5,13 +5,20 @@ apply plugin: 'idea'
 sourceCompatibility = targetCompatibility = '1.7'
 
 repositories {
-  mavenCentral()
   mavenLocal()
+  maven {
+    url 'https://oss.sonatype.org/content/groups/public'
+  }
+  maven {
+    // needed for 'com.bea.xml:jsr173-ri:1.0:jsr173-ri.jar' which isn't in Maven Central
+    url 'http://maven.nuxeo.org/nexus/content/groups/public/'
+  }
+  mavenCentral()
 }
 
 dependencies {
   compile 'commons-lang:commons-lang:2.6'
-  compile 'com.github.fritaly.graphml4j:graphml4j:1.0-20141101'
+  compile 'com.github.fritaly.graphml4j:graphml4j:1.0-SNAPSHOT'
 }
 
 task wrapper(type: Wrapper) {
