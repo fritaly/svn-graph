@@ -103,7 +103,7 @@ public class SvnGraph {
 							// null (happens whether a branch was created
 							// outside the 'branches' directory for
 							// instance)
-							System.err.println(String.format("Skipped revision %d because of a null root", source.getRevision()));
+							System.err.println(String.format("Skipped an update for revision %d because of a null source root", source.getRevision()));
 							continue;
 						}
 
@@ -120,7 +120,7 @@ public class SvnGraph {
 						final String targetRoot = Utils.getRootName(update.getPath());
 
 						if (targetRoot == null) {
-							System.err.println(String.format("Skipped revision %d because of a null root", revision.getNumber()));
+							System.err.println(String.format("Skipped an update for revision %d because of a null target root", revision.getNumber()));
 							continue;
 						}
 
