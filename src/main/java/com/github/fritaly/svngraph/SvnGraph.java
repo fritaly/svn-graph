@@ -21,7 +21,6 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,13 +29,13 @@ import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import com.github.fritaly.graphml4j.GraphMLWriter;
-import com.github.fritaly.graphml4j.NodeStyle;
-import com.github.fritaly.graphml4j.datastructure.Graph;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
+
+import com.github.fritaly.graphml4j.NodeStyle;
+import com.github.fritaly.graphml4j.datastructure.Graph;
+import com.github.fritaly.graphml4j.datastructure.Node;
 
 
 public class SvnGraph {
@@ -89,13 +88,14 @@ public class SvnGraph {
 
 //			graphWriter = new GraphMLWriter(fileWriter);
 
+			// TODO set style for tags
 //			final NodeStyle tagStyle = graphWriter.getNodeStyle();
 //			tagStyle.setFillColor(Color.WHITE);
 
 //			graphWriter.graph();
 
 			// map associating node labels to their corresponding node id in the graph
-			final Map<String, String> nodeIdsPerLabel = new TreeMap<>();
+//			final Map<String, String> nodeIdsPerLabel = new TreeMap<>();
 
 			// the node style associated to each branch
 			final Map<String, NodeStyle> nodeStyles = new TreeMap<>();
@@ -126,30 +126,34 @@ public class SvnGraph {
 						final String sourceLabel = computeNodeLabel(sourceRoot, source.getRevision());
 
 						// create a node for the source (path, revision)
-						final String sourceId;
+						Node sourceNode = graph.getNodeByData(sourceLabel);
 
-						if (nodeIdsPerLabel.containsKey(sourceLabel)) {
-							// retrieve the id of the existing node
-							sourceId = nodeIdsPerLabel.get(sourceLabel);
-						} else {
-							// create the new node
-							if (Utils.isTagPath(source.getPath())) {
-//								graphWriter.setNodeStyle(tagStyle);
-							} else {
-								if (!nodeStyles.containsKey(sourceRoot)) {
-									final NodeStyle style = new NodeStyle();
-									style.setFillColor(randomColor());
-
-									nodeStyles.put(sourceRoot, style);
-								}
-
-//								graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
-							}
-
-//							sourceId = graphWriter.node(sourceLabel);
-
-//							nodeIdsPerLabel.put(sourceLabel, sourceId);
+						if (sourceNode == null) {
+							sourceNode = graph.addNode(sourceLabel);
 						}
+
+//						if (nodeIdsPerLabel.containsKey(sourceLabel)) {
+//							// retrieve the id of the existing node
+//							sourceId = nodeIdsPerLabel.get(sourceLabel);
+//						} else {
+//							// create the new node
+//							if (Utils.isTagPath(source.getPath())) {
+//								graphWriter.setNodeStyle(tagStyle);
+//							} else {
+//								if (!nodeStyles.containsKey(sourceRoot)) {
+//									final NodeStyle style = new NodeStyle();
+//									style.setFillColor(randomColor());
+//
+//									nodeStyles.put(sourceRoot, style);
+//								}
+//
+//								graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
+//							}
+//
+//							sourceId = graphWriter.node(sourceLabel);
+//
+//							nodeIdsPerLabel.put(sourceLabel, sourceId);
+//						}
 
 						// and another for the newly created directory
 						final String targetRoot = Utils.getRootName(update.getPath());
@@ -174,32 +178,39 @@ public class SvnGraph {
 //							graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
 						}
 
-						final String targetId;
+						Node targetNode = graph.getNodeByData(targetLabel);
 
-						if (nodeIdsPerLabel.containsKey(targetLabel)) {
-							// retrieve the id of the existing node
-							targetId = nodeIdsPerLabel.get(targetLabel);
-						} else {
-							// create the new node
-							if (Utils.isTagPath(update.getPath())) {
-//								graphWriter.setNodeStyle(tagStyle);
-							} else {
-								if (!nodeStyles.containsKey(targetRoot)) {
-									final NodeStyle style = new NodeStyle();
-									style.setFillColor(randomColor());
-
-									nodeStyles.put(targetRoot, style);
-								}
-
-//								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
-							}
-
-//							targetId = graphWriter.node(targetLabel);
-
-//							nodeIdsPerLabel.put(targetLabel, targetId);
+						if (targetNode == null) {
+							targetNode = graph.addNode(targetLabel);
 						}
 
+//						final String targetId;
+//
+//						if (nodeIdsPerLabel.containsKey(targetLabel)) {
+//							// retrieve the id of the existing node
+//							targetId = nodeIdsPerLabel.get(targetLabel);
+//						} else {
+//							// create the new node
+//							if (Utils.isTagPath(update.getPath())) {
+////								graphWriter.setNodeStyle(tagStyle);
+//							} else {
+//								if (!nodeStyles.containsKey(targetRoot)) {
+//									final NodeStyle style = new NodeStyle();
+//									style.setFillColor(randomColor());
+//
+//									nodeStyles.put(targetRoot, style);
+//								}
+//
+////								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
+//							}
+//
+////							targetId = graphWriter.node(targetLabel);
+//
+////							nodeIdsPerLabel.put(targetLabel, targetId);
+//						}
+
 						// create an edge between the 2 nodes
+						graph.addEdge(null, sourceNode, targetNode);
 //						graphWriter.edge(sourceId, targetId);
 					} else {
 						System.out.println(String.format("  > %s %s", update.getAction(), update.getPath()));
@@ -214,7 +225,9 @@ public class SvnGraph {
 			// Dispatch the revisions per corresponding branch
 			final Map<String, Set<Long>> revisionsPerBranch = new TreeMap<>();
 
-			for (String nodeLabel : nodeIdsPerLabel.keySet()) {
+			for (Node node : graph.getNodes()) {
+				final String nodeLabel = node.getLabel();
+
 				if (nodeLabel.contains("@")) {
 					final String branchName = StringUtils.substringBefore(nodeLabel, "@");
 					final long revision = Long.parseLong(StringUtils.substringAfter(nodeLabel, "@"));
@@ -236,6 +249,8 @@ public class SvnGraph {
 				for (int i = 0; i < branchRevisions.size() - 1; i++) {
 					final String nodeLabel1 = String.format("%s@%d", branchName, branchRevisions.get(i));
 					final String nodeLabel2 = String.format("%s@%d", branchName, branchRevisions.get(i+1));
+
+					graph.addEdge(null, graph.getNodeByData(nodeLabel1), graph.getNodeByData(nodeLabel2));
 
 //					graphWriter.edge(nodeIdsPerLabel.get(nodeLabel1), nodeIdsPerLabel.get(nodeLabel2));
 				}
