@@ -29,7 +29,6 @@ import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
 
@@ -57,8 +56,9 @@ public class SvnGraph {
 
 		@Override
 		public String getNodeLabel(Node node) {
-			// return the node default label
-			return node.getLabel();
+			final RevisionPath data = (RevisionPath) node.getData();
+
+			return String.format("%s@%d", data.getPath(), data.getRevision());
 		}
 
 		@Override
@@ -74,10 +74,6 @@ public class SvnGraph {
 
 	private static Color randomColor() {
 		return new Color(RandomUtils.nextInt(255), RandomUtils.nextInt(255), RandomUtils.nextInt(255));
-	}
-
-	private static String computeNodeLabel(String path, long revision) {
-		return String.format("%s@%d", path, revision);
 	}
 
 	public static void main(String[] args) throws Exception {
