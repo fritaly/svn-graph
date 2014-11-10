@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.github.fritaly.svngraph;
 
 import java.awt.Color;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +44,9 @@ import com.github.fritaly.graphml4j.datastructure.Node;
 public class SvnGraph {
 
 	private static final class CustomRenderer implements Renderer {
+
+		private final Map<String, NodeStyle> nodeStyles = new LinkedHashMap<>();
+
 		@Override
 		public boolean isGroupOpen(Node node) {
 			return true;
@@ -51,7 +54,16 @@ public class SvnGraph {
 
 		@Override
 		public NodeStyle getNodeStyle(Node node) {
-			return new NodeStyle();
+			final RevisionPath data = (RevisionPath) node.getData();
+
+			if (!nodeStyles.containsKey(data.getPath())) {
+				final NodeStyle style = new NodeStyle();
+				style.setFillColor(randomColor());
+
+				nodeStyles.put(data.getPath(), style);
+			}
+
+			return nodeStyles.get(data.getPath());
 		}
 
 		@Override
