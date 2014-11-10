@@ -33,11 +33,44 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
 
+import com.github.fritaly.graphml4j.EdgeStyle;
+import com.github.fritaly.graphml4j.GroupStyles;
+import com.github.fritaly.graphml4j.NodeStyle;
+import com.github.fritaly.graphml4j.Renderer;
+import com.github.fritaly.graphml4j.datastructure.Edge;
 import com.github.fritaly.graphml4j.datastructure.Graph;
 import com.github.fritaly.graphml4j.datastructure.Node;
 
 
 public class SvnGraph {
+
+	private static final class CustomRenderer implements Renderer {
+		@Override
+		public boolean isGroupOpen(Node node) {
+			return true;
+		}
+
+		@Override
+		public NodeStyle getNodeStyle(Node node) {
+			return new NodeStyle();
+		}
+
+		@Override
+		public String getNodeLabel(Node node) {
+			// return the node default label
+			return node.getLabel();
+		}
+
+		@Override
+		public GroupStyles getGroupStyles(Node node) {
+			return new GroupStyles();
+		}
+
+		@Override
+		public EdgeStyle getEdgeStyle(Edge edge) {
+			return new EdgeStyle();
+		}
+	}
 
 	private static Color randomColor() {
 		return new Color(RandomUtils.nextInt(255), RandomUtils.nextInt(255), RandomUtils.nextInt(255));
@@ -176,7 +209,7 @@ public class SvnGraph {
 				}
 			}
 
-			graph.toGraphML(fileWriter);
+			graph.toGraphML(fileWriter, new CustomRenderer());
 
 			System.out.println(String.format("Found %d significant revisions", count));
 		} finally {
