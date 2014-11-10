@@ -140,13 +140,13 @@ public class SvnGraph {
 							continue;
 						}
 
-						final String sourceLabel = computeNodeLabel(sourceRoot, source.getRevision());
+						final RevisionPath sourceRP = new RevisionPath(sourceRoot, source.getRevision());
 
 						// create a node for the source (path, revision)
-						Node sourceNode = graph.getNodeByData(sourceLabel);
+						Node sourceNode = graph.getNodeByData(sourceRP);
 
 						if (sourceNode == null) {
-							sourceNode = graph.addNode(sourceLabel);
+							sourceNode = graph.addNode(sourceRP);
 						}
 
 						// and another for the newly created directory
@@ -157,12 +157,12 @@ public class SvnGraph {
 							continue;
 						}
 
-						final String targetLabel = computeNodeLabel(targetRoot, revision.getNumber());
+						final RevisionPath targetRP = new RevisionPath(targetRoot, revision.getNumber());
 
-						Node targetNode = graph.getNodeByData(targetLabel);
+						Node targetNode = graph.getNodeByData(targetRP);
 
 						if (targetNode == null) {
-							targetNode = graph.addNode(targetLabel);
+							targetNode = graph.addNode(targetRP);
 						}
 
 						// create an edge between the 2 nodes
@@ -181,20 +181,15 @@ public class SvnGraph {
 			final Map<String, Set<Long>> revisionsPerBranch = new TreeMap<>();
 
 			for (Node node : graph.getNodes()) {
-				final String nodeLabel = node.getLabel();
+				final RevisionPath revisionPath = (RevisionPath) node.getData();
 
-				if (nodeLabel.contains("@")) {
-					final String branchName = StringUtils.substringBefore(nodeLabel, "@");
-					final long revision = Long.parseLong(StringUtils.substringAfter(nodeLabel, "@"));
+				final String branchName = revisionPath.getPath();
 
-					if (!revisionsPerBranch.containsKey(branchName)) {
-						revisionsPerBranch.put(branchName, new TreeSet<Long>());
-					}
-
-					revisionsPerBranch.get(branchName).add(revision);
-				} else {
-					throw new IllegalStateException(nodeLabel);
+				if (!revisionsPerBranch.containsKey(branchName)) {
+					revisionsPerBranch.put(branchName, new TreeSet<Long>());
 				}
+
+				revisionsPerBranch.get(branchName).add(revisionPath.getRevision());
 			}
 
 			// Recreate the missing edges between revisions from a same branch
@@ -202,10 +197,10 @@ public class SvnGraph {
 				final List<Long> branchRevisions = new ArrayList<>(revisionsPerBranch.get(branchName));
 
 				for (int i = 0; i < branchRevisions.size() - 1; i++) {
-					final String nodeLabel1 = String.format("%s@%d", branchName, branchRevisions.get(i));
-					final String nodeLabel2 = String.format("%s@%d", branchName, branchRevisions.get(i+1));
+					final RevisionPath sourceData = new RevisionPath(branchName, branchRevisions.get(i));
+					final RevisionPath targetData = new RevisionPath(branchName, branchRevisions.get(i+1));
 
-					graph.addEdge(null, graph.getNodeByData(nodeLabel1), graph.getNodeByData(nodeLabel2));
+					graph.addEdge(null, graph.getNodeByData(sourceData), graph.getNodeByData(targetData));
 				}
 			}
 
