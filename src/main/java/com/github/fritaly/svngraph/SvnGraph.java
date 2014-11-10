@@ -32,6 +32,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import com.github.fritaly.graphml4j.GraphMLWriter;
 import com.github.fritaly.graphml4j.NodeStyle;
+import com.github.fritaly.graphml4j.datastructure.Graph;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
@@ -77,18 +79,20 @@ public class SvnGraph {
 
 		int count = 0;
 
+		final Graph graph = new Graph();
+
 		FileWriter fileWriter = null;
-		GraphMLWriter graphWriter = null;
+//		GraphMLWriter graphWriter = null;
 
 		try {
 			fileWriter = new FileWriter(output);
 
-			graphWriter = new GraphMLWriter(fileWriter);
+//			graphWriter = new GraphMLWriter(fileWriter);
 
-			final NodeStyle tagStyle = graphWriter.getNodeStyle();
-			tagStyle.setFillColor(Color.WHITE);
+//			final NodeStyle tagStyle = graphWriter.getNodeStyle();
+//			tagStyle.setFillColor(Color.WHITE);
 
-			graphWriter.graph();
+//			graphWriter.graph();
 
 			// map associating node labels to their corresponding node id in the graph
 			final Map<String, String> nodeIdsPerLabel = new TreeMap<>();
@@ -130,7 +134,7 @@ public class SvnGraph {
 						} else {
 							// create the new node
 							if (Utils.isTagPath(source.getPath())) {
-								graphWriter.setNodeStyle(tagStyle);
+//								graphWriter.setNodeStyle(tagStyle);
 							} else {
 								if (!nodeStyles.containsKey(sourceRoot)) {
 									final NodeStyle style = new NodeStyle();
@@ -139,12 +143,12 @@ public class SvnGraph {
 									nodeStyles.put(sourceRoot, style);
 								}
 
-								graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
+//								graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
 							}
 
-							sourceId = graphWriter.node(sourceLabel);
+//							sourceId = graphWriter.node(sourceLabel);
 
-							nodeIdsPerLabel.put(sourceLabel, sourceId);
+//							nodeIdsPerLabel.put(sourceLabel, sourceId);
 						}
 
 						// and another for the newly created directory
@@ -158,7 +162,7 @@ public class SvnGraph {
 						final String targetLabel = computeNodeLabel(targetRoot, revision.getNumber());
 
 						if (Utils.isTagPath(update.getPath())) {
-							graphWriter.setNodeStyle(tagStyle);
+//							graphWriter.setNodeStyle(tagStyle);
 						} else {
 							if (!nodeStyles.containsKey(targetRoot)) {
 								final NodeStyle style = new NodeStyle();
@@ -167,7 +171,7 @@ public class SvnGraph {
 								nodeStyles.put(targetRoot, style);
 							}
 
-							graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
+//							graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
 						}
 
 						final String targetId;
@@ -178,7 +182,7 @@ public class SvnGraph {
 						} else {
 							// create the new node
 							if (Utils.isTagPath(update.getPath())) {
-								graphWriter.setNodeStyle(tagStyle);
+//								graphWriter.setNodeStyle(tagStyle);
 							} else {
 								if (!nodeStyles.containsKey(targetRoot)) {
 									final NodeStyle style = new NodeStyle();
@@ -187,16 +191,16 @@ public class SvnGraph {
 									nodeStyles.put(targetRoot, style);
 								}
 
-								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
+//								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
 							}
 
-							targetId = graphWriter.node(targetLabel);
+//							targetId = graphWriter.node(targetLabel);
 
-							nodeIdsPerLabel.put(targetLabel, targetId);
+//							nodeIdsPerLabel.put(targetLabel, targetId);
 						}
 
 						// create an edge between the 2 nodes
-						graphWriter.edge(sourceId, targetId);
+//						graphWriter.edge(sourceId, targetId);
 					} else {
 						System.out.println(String.format("  > %s %s", update.getAction(), update.getPath()));
 					}
@@ -233,17 +237,16 @@ public class SvnGraph {
 					final String nodeLabel1 = String.format("%s@%d", branchName, branchRevisions.get(i));
 					final String nodeLabel2 = String.format("%s@%d", branchName, branchRevisions.get(i+1));
 
-					graphWriter.edge(nodeIdsPerLabel.get(nodeLabel1), nodeIdsPerLabel.get(nodeLabel2));
+//					graphWriter.edge(nodeIdsPerLabel.get(nodeLabel1), nodeIdsPerLabel.get(nodeLabel2));
 				}
 			}
 
-			graphWriter.closeGraph();
+//			graphWriter.closeGraph();
+
+			graph.toGraphML(fileWriter);
 
 			System.out.println(String.format("Found %d significant revisions", count));
 		} finally {
-			if (graphWriter != null) {
-				graphWriter.close();
-			}
 			if (fileWriter != null) {
 				fileWriter.close();
 			}
