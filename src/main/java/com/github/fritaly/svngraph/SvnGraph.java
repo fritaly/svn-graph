@@ -33,7 +33,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.w3c.dom.Document;
 
-import com.github.fritaly.graphml4j.NodeStyle;
 import com.github.fritaly.graphml4j.datastructure.Graph;
 import com.github.fritaly.graphml4j.datastructure.Node;
 
@@ -81,24 +80,9 @@ public class SvnGraph {
 		final Graph graph = new Graph();
 
 		FileWriter fileWriter = null;
-//		GraphMLWriter graphWriter = null;
 
 		try {
 			fileWriter = new FileWriter(output);
-
-//			graphWriter = new GraphMLWriter(fileWriter);
-
-			// TODO set style for tags
-//			final NodeStyle tagStyle = graphWriter.getNodeStyle();
-//			tagStyle.setFillColor(Color.WHITE);
-
-//			graphWriter.graph();
-
-			// map associating node labels to their corresponding node id in the graph
-//			final Map<String, String> nodeIdsPerLabel = new TreeMap<>();
-
-			// the node style associated to each branch
-			final Map<String, NodeStyle> nodeStyles = new TreeMap<>();
 
 			for (Revision revision : history.getSignificantRevisions()) {
 				System.out.println(revision.getNumber() + " - " + revision.getMessage());
@@ -132,29 +116,6 @@ public class SvnGraph {
 							sourceNode = graph.addNode(sourceLabel);
 						}
 
-//						if (nodeIdsPerLabel.containsKey(sourceLabel)) {
-//							// retrieve the id of the existing node
-//							sourceId = nodeIdsPerLabel.get(sourceLabel);
-//						} else {
-//							// create the new node
-//							if (Utils.isTagPath(source.getPath())) {
-//								graphWriter.setNodeStyle(tagStyle);
-//							} else {
-//								if (!nodeStyles.containsKey(sourceRoot)) {
-//									final NodeStyle style = new NodeStyle();
-//									style.setFillColor(randomColor());
-//
-//									nodeStyles.put(sourceRoot, style);
-//								}
-//
-//								graphWriter.setNodeStyle(nodeStyles.get(sourceRoot));
-//							}
-//
-//							sourceId = graphWriter.node(sourceLabel);
-//
-//							nodeIdsPerLabel.put(sourceLabel, sourceId);
-//						}
-
 						// and another for the newly created directory
 						final String targetRoot = Utils.getRootName(update.getPath());
 
@@ -165,53 +126,14 @@ public class SvnGraph {
 
 						final String targetLabel = computeNodeLabel(targetRoot, revision.getNumber());
 
-						if (Utils.isTagPath(update.getPath())) {
-//							graphWriter.setNodeStyle(tagStyle);
-						} else {
-							if (!nodeStyles.containsKey(targetRoot)) {
-								final NodeStyle style = new NodeStyle();
-								style.setFillColor(randomColor());
-
-								nodeStyles.put(targetRoot, style);
-							}
-
-//							graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
-						}
-
 						Node targetNode = graph.getNodeByData(targetLabel);
 
 						if (targetNode == null) {
 							targetNode = graph.addNode(targetLabel);
 						}
 
-//						final String targetId;
-//
-//						if (nodeIdsPerLabel.containsKey(targetLabel)) {
-//							// retrieve the id of the existing node
-//							targetId = nodeIdsPerLabel.get(targetLabel);
-//						} else {
-//							// create the new node
-//							if (Utils.isTagPath(update.getPath())) {
-////								graphWriter.setNodeStyle(tagStyle);
-//							} else {
-//								if (!nodeStyles.containsKey(targetRoot)) {
-//									final NodeStyle style = new NodeStyle();
-//									style.setFillColor(randomColor());
-//
-//									nodeStyles.put(targetRoot, style);
-//								}
-//
-////								graphWriter.setNodeStyle(nodeStyles.get(targetRoot));
-//							}
-//
-////							targetId = graphWriter.node(targetLabel);
-//
-////							nodeIdsPerLabel.put(targetLabel, targetId);
-//						}
-
 						// create an edge between the 2 nodes
 						graph.addEdge(null, sourceNode, targetNode);
-//						graphWriter.edge(sourceId, targetId);
 					} else {
 						System.out.println(String.format("  > %s %s", update.getAction(), update.getPath()));
 					}
@@ -251,12 +173,8 @@ public class SvnGraph {
 					final String nodeLabel2 = String.format("%s@%d", branchName, branchRevisions.get(i+1));
 
 					graph.addEdge(null, graph.getNodeByData(nodeLabel1), graph.getNodeByData(nodeLabel2));
-
-//					graphWriter.edge(nodeIdsPerLabel.get(nodeLabel1), nodeIdsPerLabel.get(nodeLabel2));
 				}
 			}
-
-//			graphWriter.closeGraph();
 
 			graph.toGraphML(fileWriter);
 
