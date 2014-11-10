@@ -52,25 +52,39 @@ public class SvnGraph {
 			return true;
 		}
 
+		private Color randomColor() {
+			return new Color(RandomUtils.nextInt(255), RandomUtils.nextInt(255), RandomUtils.nextInt(255));
+		}
+
 		@Override
 		public NodeStyle getNodeStyle(Node node) {
-			final RevisionPath data = (RevisionPath) node.getData();
+			if (node.getData() instanceof RevisionPath) {
+				final RevisionPath data = (RevisionPath) node.getData();
 
-			if (!nodeStyles.containsKey(data.getPath())) {
-				final NodeStyle style = new NodeStyle();
-				style.setFillColor(randomColor());
+				if (!nodeStyles.containsKey(data.getPath())) {
+					final NodeStyle style = new NodeStyle();
+					style.setFillColor(randomColor());
 
-				nodeStyles.put(data.getPath(), style);
+					nodeStyles.put(data.getPath(), style);
+				}
+
+				return nodeStyles.get(data.getPath());
 			}
 
-			return nodeStyles.get(data.getPath());
+			// typically for a group representing a branch
+			return new NodeStyle();
 		}
 
 		@Override
 		public String getNodeLabel(Node node) {
-			final RevisionPath data = (RevisionPath) node.getData();
+			if (node.getData() instanceof RevisionPath) {
+				final RevisionPath data = (RevisionPath) node.getData();
 
-			return String.format("%s@%d", data.getPath(), data.getRevision());
+				return String.format("%s@%d", data.getPath(), data.getRevision());
+			}
+
+			// typically for a group representing a branch
+			return node.getLabel();
 		}
 
 		@Override
@@ -82,10 +96,6 @@ public class SvnGraph {
 		public EdgeStyle getEdgeStyle(Edge edge) {
 			return new EdgeStyle();
 		}
-	}
-
-	private static Color randomColor() {
-		return new Color(RandomUtils.nextInt(255), RandomUtils.nextInt(255), RandomUtils.nextInt(255));
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -200,15 +210,23 @@ public class SvnGraph {
 				revisionsPerBranch.get(branchName).add(revisionPath.getRevision());
 			}
 
-			// Recreate the missing edges between revisions from a same branch
+			// Recreate the missing edges between revisions from a same branch and group nodes per branch
 			for (String branchName : revisionsPerBranch.keySet()) {
 				final List<Long> branchRevisions = new ArrayList<>(revisionsPerBranch.get(branchName));
+
+				final Node branchNode = graph.addNode(branchName);
 
 				for (int i = 0; i < branchRevisions.size() - 1; i++) {
 					final RevisionPath sourceData = new RevisionPath(branchName, branchRevisions.get(i));
 					final RevisionPath targetData = new RevisionPath(branchName, branchRevisions.get(i+1));
 
-					graph.addEdge(null, graph.getNodeByData(sourceData), graph.getNodeByData(targetData));
+					final Node sourceNode = graph.getNodeByData(sourceData);
+					final Node targetNode = graph.getNodeByData(targetData);
+
+					sourceNode.setParent(branchNode);
+					targetNode.setParent(branchNode);
+
+					graph.addEdge(null, sourceNode, targetNode);
 				}
 			}
 
