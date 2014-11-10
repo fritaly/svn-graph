@@ -16,7 +16,12 @@
  */
 package com.github.fritaly.svngraph;
 
-public final class RevisionPath {
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
+public final class RevisionPath implements Comparable<RevisionPath> {
 
 	private final String path;
 
@@ -33,5 +38,46 @@ public final class RevisionPath {
 
 	public long getRevision() {
 		return revision;
+	}
+
+	@Override
+	public int compareTo(RevisionPath other) {
+		if (!this.path.equals(other.path)) {
+			// compare first on the path
+			return this.path.compareTo(other.path);
+		}
+
+		// then the revision
+		final long delta = this.revision - other.revision;
+
+		return (delta < 0) ? -1 : (delta > 0) ? +1 : 0;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
+		if (obj == this) {
+			return true;
+		}
+		if (obj instanceof RevisionPath) {
+			final RevisionPath other = (RevisionPath) obj;
+
+			return (this.revision == other.revision) && StringUtils.equals(this.path, other.path);
+		}
+
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append("path", path).append("revision", revision)
+				.toString();
+	}
+
+	@Override
+	public int hashCode() {
+		return new HashCodeBuilder(11, 31).append(path).append(revision).toHashCode();
 	}
 }
